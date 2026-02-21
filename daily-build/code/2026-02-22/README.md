@@ -1,6 +1,7 @@
 # Laundry Decision Agent
 
-「今日洗濯すべきか？」を判断し、推奨時間と根拠を示す Vite + React + TypeScript の SPA です。現状はダミー天気 (`src/lib/mockWeather.ts`) を使い、将来 API 差し替えしやすい構成にしています。
+「今日洗濯すべきか？」を判断し、推奨時間と根拠を示す Vite + React + TypeScript の SPA です。
+現状はダミー天気 (`src/lib/mockWeather.ts`) を使い、将来 API 差し替えしやすい構成にしています。
 
 ## 前提
 
