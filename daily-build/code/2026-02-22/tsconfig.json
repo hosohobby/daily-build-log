@@ -11,7 +11,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "lucide-react": ["src/lib/lucide-react"]
+    }
   },
   "include": ["src"]
 }
