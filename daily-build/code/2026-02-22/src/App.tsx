@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { decideLaundry } from "./lib/decision";
-import { getMockWeather } from "./lib/mockWeather";
-import { DryingMethod, Inputs, LaundryAmount } from "./lib/types";
+import { DryingMethod, Inputs, LaundryAmount, Weather } from "./lib/types";
+import { fetchTokyoWeather } from "./lib/weatherService";
 
 function toLabelRecommendation(value: "do" | "dont" | "wait"): string {
   if (value === "do") return "洗濯する";
@@ -22,34 +22,72 @@ function parseBoolean(value: string): boolean | undefined {
 }
 
 function App() {
-  const weather = useMemo(() => getMockWeather(), []);
   const [inputs, setInputs] = useState<Inputs>({});
+  const [weather, setWeather] = useState<Weather | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(true);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
-  const decision = useMemo(() => decideLaundry(inputs, weather), [inputs, weather]);
+  useEffect(() => {
+    let isActive = true;
+    const loadWeather = async () => {
+      setIsLoadingWeather(true);
+      setWeatherError(null);
 
-  const recommendationClass = `recommendation recommendation-${decision.recommendation}`;
+      try {
+        const latestWeather = await fetchTokyoWeather();
+        if (!isActive) return;
+        setWeather(latestWeather);
+      } catch (error) {
+        if (!isActive) return;
+        setWeatherError(error instanceof Error ? error.message : "天気情報の取得に失敗しました。");
+      } finally {
+        if (!isActive) return;
+        setIsLoadingWeather(false);
+      }
+    };
+
+    loadWeather();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const decision = useMemo(() => {
+    if (!weather) return null;
+    return decideLaundry(inputs, weather);
+  }, [inputs, weather]);
+
+  const recommendationClass = decision
+    ? `recommendation recommendation-${decision.recommendation}`
+    : "recommendation recommendation-wait";
 
   return (
     <main className="app">
       <section className={recommendationClass}>
         <p className="badge">今日の提案</p>
         <h1>Laundry Decision Agent</h1>
-        <p className="recommendation-text">推奨: {toLabelRecommendation(decision.recommendation)}</p>
-        <p className="recommendation-time">推奨開始時刻: {decision.recommendedStartTime}</p>
-        <ul>
-          {decision.reasons.map((reason) => (
-            <li key={reason}>{reason}</li>
-          ))}
-        </ul>
-        {typeof decision.estimatedDryingHours === "number" && (
-          <p className="note">部屋干し乾燥見込み: 約 {decision.estimatedDryingHours} 時間</p>
-        )}
-        {decision.warnings.length > 0 && (
-          <div className="warning-box">
-            {decision.warnings.map((warning) => (
-              <p key={warning}>{warning}</p>
-            ))}
-          </div>
+        {isLoadingWeather && <p className="status-text">Loading... 東京都の天気を取得中です。</p>}
+        {!isLoadingWeather && weatherError && <p className="status-text status-error">{weatherError}</p>}
+        {decision && (
+          <>
+            <p className="recommendation-text">推奨: {toLabelRecommendation(decision.recommendation)}</p>
+            <p className="recommendation-time">推奨開始時刻: {decision.recommendedStartTime}</p>
+            <ul>
+              {decision.reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+            {typeof decision.estimatedDryingHours === "number" && (
+              <p className="note">部屋干し乾燥見込み: 約 {decision.estimatedDryingHours} 時間</p>
+            )}
+            {decision.warnings.length > 0 && (
+              <div className="warning-box">
+                {decision.warnings.map((warning) => (
+                  <p key={warning}>{warning}</p>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -144,29 +182,33 @@ function App() {
       </section>
 
       <section className="panel">
-        <h2>今日の環境（ダミー）</h2>
-        <dl className="weather-grid">
-          <div>
-            <dt>天気</dt>
-            <dd>{toLabelWeather(weather.condition)}</dd>
-          </div>
-          <div>
-            <dt>湿度</dt>
-            <dd>{weather.humidity}%</dd>
-          </div>
-          <div>
-            <dt>気温</dt>
-            <dd>{weather.temperature}℃</dd>
-          </div>
-          <div>
-            <dt>降水確率</dt>
-            <dd>{weather.precipitationProbability}%</dd>
-          </div>
-          <div>
-            <dt>風速</dt>
-            <dd>{weather.windSpeed} m/s</dd>
-          </div>
-        </dl>
+        <h2>東京都の現在天気</h2>
+        {isLoadingWeather && <p className="status-text">Loading...</p>}
+        {!isLoadingWeather && weatherError && <p className="status-text status-error">{weatherError}</p>}
+        {weather && (
+          <dl className="weather-grid">
+            <div>
+              <dt>天気</dt>
+              <dd>{toLabelWeather(weather.condition)}</dd>
+            </div>
+            <div>
+              <dt>湿度</dt>
+              <dd>{weather.humidity}%</dd>
+            </div>
+            <div>
+              <dt>気温</dt>
+              <dd>{weather.temperature}℃</dd>
+            </div>
+            <div>
+              <dt>降水確率</dt>
+              <dd>{weather.precipitationProbability}%</dd>
+            </div>
+            <div>
+              <dt>風速</dt>
+              <dd>{weather.windSpeed} m/s</dd>
+            </div>
+          </dl>
+        )}
       </section>
     </main>
   );

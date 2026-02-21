@@ -97,6 +97,16 @@ li {
   border-radius: 8px;
 }
 
+.status-text {
+  margin: 6px 0;
+  font-weight: 700;
+  color: #35506d;
+}
+
+.status-error {
+  color: #b22f2f;
+}
+
 label {
   display: grid;
   gap: 6px;

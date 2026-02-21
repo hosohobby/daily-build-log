@@ -1,7 +1,7 @@
 # Laundry Decision Agent
 
 「今日洗濯すべきか？」を判断し、推奨時間と根拠を示す Vite + React + TypeScript の SPA です。
-現状はダミー天気 (`src/lib/mockWeather.ts`) を使い、将来 API 差し替えしやすい構成にしています。
+東京都の天気情報を WeatherAPI から取得し、そのデータを使って判定します。
 
 ## 前提
 
@@ -17,19 +17,27 @@
 npm install
 ```
 
-2. 開発サーバー起動
+2. `.env` に API キーを設定（WeatherAPI の無料プランで取得）
+
+```bash
+cp .env.example .env
+```
+
+`.env` を開き、`VITE_WEATHER_API_KEY` にキーを設定してください。
+
+3. 開発サーバー起動
 
 ```bash
 npm run dev
 ```
 
-3. Firebase にログイン
+4. Firebase にログイン
 
 ```bash
 firebase login
 ```
 
-4. Hosting 初期化（未実施の場合）
+5. Hosting 初期化（未実施の場合）
 
 ```bash
 firebase init hosting
@@ -39,7 +47,7 @@ firebase init hosting
 - `What do you want to use as your public directory?` → `dist`
 - `Configure as a single-page app (rewrite all urls to /index.html)?` → `Yes`
 
-5. デプロイ
+6. デプロイ
 
 ```bash
 npm run deploy
@@ -59,6 +67,6 @@ SPA はクライアント側ルーティングで画面を表示するため、�
 ## 構成
 
 - `src/lib/types.ts`: Weather / Inputs / Decision の型
-- `src/lib/mockWeather.ts`: seed 固定のダミー天気生成
+- `src/lib/weatherService.ts`: 東京都の天気を WeatherAPI から取得し `Weather` 型へ変換
 - `src/lib/decision.ts`: 判定ロジック
 - `src/App.tsx`: 1画面 UI
