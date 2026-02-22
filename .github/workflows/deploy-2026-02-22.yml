@@ -11,11 +11,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    permissions:
+      contents: read
+      id-token: write   
 
-      # ★ デバッグ（残してOK）
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Debug directory
         run: |
           pwd
@@ -26,6 +28,14 @@ jobs:
         with:
           node-version: 20
 
+      # Workload Identity Login
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/530643963088/locations/global/workloadIdentityPools/github-pool/providers/github
+          service_account: deploy-to-firebase@fir-eb3e1.iam.gserviceaccount.com
+
       - name: Install deps
         working-directory: daily-build/code/2026-02-22
         run: npm install
@@ -34,13 +44,12 @@ jobs:
         working-directory: daily-build/code/2026-02-22
         run: npm run build
         env:
-            VITE_WEATHER_API_KEY: ${{ secrets.VITE_WEATHER_API_KEY }}
+          VITE_WEATHER_API_KEY: ${{ secrets.VITE_WEATHER_API_KEY }}
 
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
           projectId: fir-eb3e1
           channelId: live
           entryPoint: daily-build/code/2026-02-22
