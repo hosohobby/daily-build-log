@@ -13,24 +13,17 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write   
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Debug directory
-        run: |
-          pwd
-          ls -R
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Workload Identity Login
-      - name: Authenticate to Google Cloud
-        id: auth
+      - name: Authenticate to Google Cloud (WIF)
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: projects/530643963088/locations/global/workloadIdentityPools/github-pool/providers/github
@@ -38,7 +31,7 @@ jobs:
 
       - name: Install deps
         working-directory: daily-build/code/2026-02-22
-        run: npm install
+        run: npm ci
 
       - name: Build
         working-directory: daily-build/code/2026-02-22
@@ -46,10 +39,6 @@ jobs:
         env:
           VITE_WEATHER_API_KEY: ${{ secrets.VITE_WEATHER_API_KEY }}
 
-      - name: Deploy to Firebase
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          projectId: fir-eb3e1
-          channelId: live
-          entryPoint: daily-build/code/2026-02-22
+      - name: Deploy to Firebase Hosting (keyless)
+        working-directory: daily-build/code/2026-02-22
+        run: npx -y firebase-tools@latest deploy --only hosting --project fir-eb3e1 --non-interactive
